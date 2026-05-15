@@ -100,7 +100,7 @@ export default function RemitosApp() {
   const [ordenCargada, setOrdenCargada] = useState(null);
   const [tab, setTab] = useState('nuevo');
   const [generando, setGenerando] = useState(false);
-  const [backendStatus, setBackendStatus] = useState(null); // null | 'ok' | 'sin-cert' | 'error'
+  const [backendStatus, setBackendStatus] = useState('sin-cert'); // null | 'ok' | 'sin-cert' | 'error'
   const [busqueda, setBusqueda] = useState('');
 
   // Persistir remitos en localStorage
