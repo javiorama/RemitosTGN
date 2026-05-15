@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { FileText, Download, Plus, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { FileText, Printer, Plus, AlertCircle, CheckCircle2, BookmarkIcon } from 'lucide-react';
 
 const empresa = {
   razonSocial: 'TALLERES GRÁFICOS DEL NORTE S.R.L.',
@@ -7,59 +7,6 @@ const empresa = {
   domicilio: 'Perú 1011, 1602 - Florida (Buenos Aires)',
   telefono: '(+54) 11 4511-xxxx',
   email: 'info@tgnorte.com.ar',
-};
-
-const SMARTIER_BASE = 'https://talleresgraficosdelnorte.smartier.software';
-
-const parsearOrdenDesdeHTML = (htmlText) => {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(htmlText, 'text/html');
-  const texto = (selector) => {
-    const el = doc.querySelector(selector);
-    return el ? el.textContent.trim() : '';
-  };
-  const numero = texto('.numero.ng-binding').replace('N°', '').trim();
-  const cliente = texto('.nombre-cliente.ng-binding');
-  const representante = texto('.nombre-representante.ng-binding');
-  const producto = texto('.nombre-producto.ng-binding');
-  const referencia = texto('.referencia.ng-binding');
-  const descEl = doc.querySelector('.st-card-content.ng-binding');
-  const descripcion = descEl ? (descEl.innerText || descEl.textContent).trim().slice(0, 400) : '';
-  const fechaEls = doc.querySelectorAll('.fecha-value.ng-binding');
-  const fechaCreacion = fechaEls[0] ? fechaEls[0].textContent.trim() : '';
-  const fechaEntrega = fechaEls[1] ? fechaEls[1].textContent.trim() : '';
-  const direccion = texto('.comentarios .ng-binding');
-  const estado = texto('.st-chip.estado-1');
-  return {
-    numero,
-    cliente,
-    representante,
-    producto: referencia ? `${producto} - ${referencia}` : producto,
-    descripcion,
-    fechaCreacion,
-    fechaEntrega,
-    direccion,
-    estado,
-  };
-};
-
-const scrapearOrdenReal = async (numeroOrden) => {
-  const url = `${SMARTIER_BASE}/#/CRM/Ordenes/${numeroOrden}`;
-  const ventana = window.open(url, '_smartier_scraper', 'width=1,height=1,left=-9999');
-  if (!ventana) throw new Error('El navegador bloqueó el popup. Habilitá los popups para este sitio.');
-  await new Promise((r) => setTimeout(r, 7000));
-  let html = '';
-  try {
-    html = ventana.document.body.innerHTML;
-  } catch (e) {
-    ventana.close();
-    throw new Error('El navegador bloqueó el acceso entre ventanas (CORS). Necesitamos otra solución.');
-  }
-  ventana.close();
-  if (!html || html.length < 500) throw new Error('La página no cargó. Verificá que estés logueado en Smartier.');
-  const datos = parsearOrdenDesdeHTML(html);
-  if (!datos.cliente && !datos.producto) throw new Error('No se encontraron datos. Verificá el número de orden.');
-  return datos;
 };
 
 const generarHTMLRemito = (r) => `<!DOCTYPE html>
@@ -120,7 +67,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f5f5f5;color:#333}
   ${r.descripcion ? `<div class="section-title">Descripción de la Orden</div><div class="desc-bloque">${r.descripcion}</div>` : ''}
   ${r.direccion ? `<div class="campo"><div class="label">Dirección de Entrega</div><div class="valor">${r.direccion}</div></div>` : ''}
   <div class="footer">
-    <p style="font-size:11px;color:#999;margin-bottom:30px;font-style:italic">Remito generado el ${new Date().toLocaleDateString('es-AR')} - Sistema TG Norte</p>
+    <p style="font-size:11px;color:#999;margin-bottom:30px;font-style:italic">Remito generado el ${r.fecha} - Sistema TG Norte</p>
     <div class="pie">
       <div><p style="margin-bottom:30px">_______________</p>Entregado por</div>
       <div><p style="margin-bottom:30px">_______________</p>Recibido por</div>
@@ -132,44 +79,50 @@ body{font-family:'Segoe UI',sans-serif;background:#f5f5f5;color:#333}
 </body></html>`;
 
 export default function RemitosApp() {
-  const [numeroOrden, setNumeroOrden] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [datosOrden, setDatosOrden] = useState(null);
   const [remitos, setRemitos] = useState([]);
   const [numeroRemito, setNumeroRemito] = useState(1001);
+  const [ordenCargada, setOrdenCargada] = useState(null);
+  const [tab, setTab] = useState('nuevo'); // 'nuevo' | 'instrucciones'
 
-  const handleScrapear = async () => {
-    if (!numeroOrden.trim()) { setError('Ingresá un número de orden'); return; }
-    setLoading(true); setError(null); setDatosOrden(null);
-    try {
-      const datos = await scrapearOrdenReal(numeroOrden.trim());
-      setDatosOrden(datos);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+  // Leer datos que vienen por URL (desde el bookmarklet)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('orden')) {
+      const datos = {
+        numero:        params.get('orden') || '',
+        cliente:       params.get('cliente') || '',
+        representante: params.get('representante') || '',
+        producto:      params.get('producto') || '',
+        descripcion:   params.get('descripcion') || '',
+        fechaCreacion: params.get('fechaCreacion') || '',
+        fechaEntrega:  params.get('fechaEntrega') || '',
+        direccion:     params.get('direccion') || '',
+        estado:        params.get('estado') || '',
+      };
+      setOrdenCargada(datos);
+      setTab('nuevo');
+      // Limpiar la URL sin recargar
+      window.history.replaceState({}, '', window.location.pathname);
     }
-  };
+  }, []);
 
   const handleGenerarRemito = () => {
     const nuevo = {
       id: numeroRemito,
-      orden: datosOrden.numero || numeroOrden,
-      cliente: datosOrden.cliente,
-      representante: datosOrden.representante,
+      orden: ordenCargada.numero,
+      cliente: ordenCargada.cliente,
+      representante: ordenCargada.representante,
       fecha: new Date().toLocaleDateString('es-AR'),
-      fechaCreacion: datosOrden.fechaCreacion,
-      fechaEntrega: datosOrden.fechaEntrega,
-      producto: datosOrden.producto,
-      descripcion: datosOrden.descripcion,
-      direccion: datosOrden.direccion,
-      estado: datosOrden.estado,
+      fechaCreacion: ordenCargada.fechaCreacion,
+      fechaEntrega: ordenCargada.fechaEntrega,
+      producto: ordenCargada.producto,
+      descripcion: ordenCargada.descripcion,
+      direccion: ordenCargada.direccion,
+      estado: ordenCargada.estado,
     };
     setRemitos([nuevo, ...remitos]);
     setNumeroRemito(numeroRemito + 1);
-    setDatosOrden(null);
-    setNumeroOrden('');
+    setOrdenCargada(null);
   };
 
   const handleImprimir = (r) => {
@@ -178,98 +131,188 @@ export default function RemitosApp() {
     v.document.close();
   };
 
+  // URL de esta app (para el bookmarklet)
+  const appUrl = window.location.origin;
+
+  // Código del bookmarklet
+  const bookmarkletCode = `javascript:(function(){
+var t=function(s){var e=document.querySelector(s);return e?e.textContent.trim():''};
+var numero=t('.numero.ng-binding').replace('N°','').trim();
+var cliente=t('.nombre-cliente.ng-binding');
+var rep=t('.nombre-representante.ng-binding');
+var prod=t('.nombre-producto.ng-binding');
+var ref=t('.referencia.ng-binding');
+var producto=ref?prod+' - '+ref:prod;
+var desc='';var descEl=document.querySelector('.st-card-content.ng-binding');
+if(descEl)desc=(descEl.innerText||descEl.textContent).trim().slice(0,400);
+var fechaEls=document.querySelectorAll('.fecha-value.ng-binding');
+var fc=fechaEls[0]?fechaEls[0].textContent.trim():'';
+var fe=fechaEls[1]?fechaEls[1].textContent.trim():'';
+var dir=t('.comentarios .ng-binding');
+var estado=t('.st-chip.estado-1');
+var base='${appUrl}';
+var url=base+'?orden='+encodeURIComponent(numero)+'&cliente='+encodeURIComponent(cliente)+'&representante='+encodeURIComponent(rep)+'&producto='+encodeURIComponent(producto)+'&descripcion='+encodeURIComponent(desc)+'&fechaCreacion='+encodeURIComponent(fc)+'&fechaEntrega='+encodeURIComponent(fe)+'&direccion='+encodeURIComponent(dir)+'&estado='+encodeURIComponent(estado);
+window.open(url,'_blank');
+})();`.replace(/\n/g, '');
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6">
       <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-1">
-            <FileText className="w-7 h-7 text-blue-400" />
-            <h1 className="text-2xl font-bold text-white">Generador de Remitos</h1>
-          </div>
-          <p className="text-slate-400 text-sm">TALLERES GRÁFICOS DEL NORTE — Conectado a Smartier</p>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 space-y-4">
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                <Plus className="w-5 h-5 text-blue-600" />Nueva Orden
-              </h2>
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Número de Orden Smartier</label>
-                  <input
-                    type="text" value={numeroOrden}
-                    onChange={(e) => setNumeroOrden(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleScrapear()}
-                    placeholder="Ej: 36042"
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg font-mono"
-                  />
-                </div>
-                <button onClick={handleScrapear} disabled={loading}
-                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2">
-                  {loading ? <><Loader2 className="w-5 h-5 animate-spin" />Cargando orden...</> : <><Download className="w-5 h-5" />Cargar desde Smartier</>}
-                </button>
-                <p className="text-xs text-slate-400 text-center">Requiere estar logueado en Smartier en este navegador</p>
-              </div>
-
-              {error && (
-                <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-4 flex gap-3">
-                  <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-                  <p className="text-red-800 text-sm">{error}</p>
-                </div>
-              )}
-
-              {datosOrden && (
-                <div className="mt-5 bg-slate-50 rounded-lg p-4 border border-slate-200">
-                  <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-green-600" />Orden Cargada
-                  </h3>
-                  <div className="grid grid-cols-2 gap-3 text-sm mb-4">
-                    <div><p className="text-slate-500 text-xs uppercase font-semibold">Orden</p><p className="font-mono font-bold">#{datosOrden.numero || numeroOrden}</p></div>
-                    <div><p className="text-slate-500 text-xs uppercase font-semibold">Cliente</p><p>{datosOrden.cliente}</p></div>
-                    <div><p className="text-slate-500 text-xs uppercase font-semibold">Producto</p><p>{datosOrden.producto}</p></div>
-                    <div><p className="text-slate-500 text-xs uppercase font-semibold">Estado</p><p>{datosOrden.estado}</p></div>
-                    <div className="col-span-2"><p className="text-slate-500 text-xs uppercase font-semibold">Entrega</p><p>{datosOrden.fechaEntrega}</p></div>
-                    {datosOrden.direccion && <div className="col-span-2"><p className="text-slate-500 text-xs uppercase font-semibold">Dirección</p><p>{datosOrden.direccion}</p></div>}
-                  </div>
-                  <button onClick={handleGenerarRemito}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-lg transition">
-                    ✓ Generar Remito #{numeroRemito}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
+        <div className="mb-6 flex items-center justify-between">
           <div>
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <h3 className="text-lg font-bold text-slate-900 mb-4">Estadísticas</h3>
-              <div className="space-y-4">
+            <div className="flex items-center gap-3 mb-1">
+              <FileText className="w-7 h-7 text-blue-400" />
+              <h1 className="text-2xl font-bold text-white">Generador de Remitos</h1>
+            </div>
+            <p className="text-slate-400 text-sm">TALLERES GRÁFICOS DEL NORTE — Conectado a Smartier</p>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => setTab('nuevo')}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${tab === 'nuevo' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}>
+              Nuevo Remito
+            </button>
+            <button onClick={() => setTab('instrucciones')}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${tab === 'instrucciones' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}>
+              Configurar Bookmarklet
+            </button>
+          </div>
+        </div>
+
+        {tab === 'instrucciones' && (
+          <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <h2 className="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2">
+              <BookmarkIcon className="w-5 h-5 text-blue-600" />
+              Cómo configurar el Bookmarklet
+            </h2>
+            <p className="text-slate-600 text-sm mb-6">
+              El bookmarklet es un botón que guardás en tu barra de favoritos. Cuando estés en una orden de Smartier, lo clickeás y automáticamente abre esta app con los datos cargados.
+            </p>
+
+            <div className="space-y-6">
+              <div className="flex gap-4">
+                <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold flex-shrink-0">1</div>
                 <div>
-                  <p className="text-slate-500 text-xs uppercase font-semibold">Remitos Generados</p>
-                  <p className="text-4xl font-bold text-blue-600">{remitos.length}</p>
+                  <p className="font-semibold text-slate-900">Mostrá la barra de favoritos</p>
+                  <p className="text-slate-500 text-sm">En Chrome: Ctrl+Shift+B (o Cmd+Shift+B en Mac)</p>
                 </div>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold flex-shrink-0">2</div>
                 <div>
-                  <p className="text-slate-500 text-xs uppercase font-semibold">Próximo Remito</p>
-                  <p className="text-2xl font-bold text-slate-900">#{numeroRemito}</p>
+                  <p className="font-semibold text-slate-900 mb-2">Arrastrá este botón a tu barra de favoritos</p>
+                  <a
+                    href={bookmarkletCode}
+                    className="inline-block bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-bold px-5 py-3 rounded-lg cursor-move select-none shadow"
+                    onClick={(e) => e.preventDefault()}
+                    draggable="true"
+                  >
+                    📋 Generar Remito TGN
+                  </a>
+                  <p className="text-slate-400 text-xs mt-2">Arrastralo a tu barra de favoritos. No lo clickees acá.</p>
                 </div>
-                <div className="pt-3 border-t border-slate-200">
-                  <p className="text-slate-500 text-xs uppercase font-semibold mb-2">Últimos</p>
-                  <div className="space-y-2">
-                    {remitos.slice(0, 5).map((r) => (
-                      <div key={r.id} className="bg-slate-50 p-2 rounded flex justify-between items-center">
-                        <span className="font-mono text-blue-600 font-bold text-sm">#{r.id}</span>
-                        <span className="text-slate-600 text-xs truncate ml-2">{r.cliente}</span>
-                      </div>
-                    ))}
-                    {remitos.length === 0 && <p className="text-slate-400 italic text-xs">Sin remitos aún</p>}
+              </div>
+
+              <div className="flex gap-4">
+                <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold flex-shrink-0">3</div>
+                <div>
+                  <p className="font-semibold text-slate-900">Usarlo</p>
+                  <p className="text-slate-500 text-sm">Abrí cualquier orden en Smartier → clickeá el bookmark → esta app se abre con los datos listos.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 bg-slate-50 border border-slate-200 rounded-lg p-4">
+              <p className="text-xs font-semibold text-slate-600 uppercase mb-2">¿No podés arrastrar? Crealo manualmente:</p>
+              <p className="text-xs text-slate-500 mb-2">Click derecho en la barra de favoritos → "Añadir página" → Nombre: <strong>Generar Remito TGN</strong> → URL: pegá esto:</p>
+              <textarea
+                readOnly
+                value={bookmarkletCode}
+                className="w-full text-xs font-mono bg-slate-900 text-green-400 p-3 rounded border border-slate-700 h-24 resize-none"
+                onClick={(e) => e.target.select()}
+              />
+              <p className="text-xs text-slate-400 mt-1">Click en el texto para seleccionar todo, luego Ctrl+C</p>
+            </div>
+          </div>
+        )}
+
+        {tab === 'nuevo' && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-2">
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                  <Plus className="w-5 h-5 text-blue-600" />Nuevo Remito
+                </h2>
+
+                {!ordenCargada && (
+                  <div className="text-center py-10">
+                    <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <BookmarkIcon className="w-8 h-8 text-slate-400" />
+                    </div>
+                    <p className="text-slate-600 font-semibold mb-2">Esperando datos de Smartier</p>
+                    <p className="text-slate-400 text-sm mb-4">
+                      Abrí una orden en Smartier y clickeá el bookmark <strong>"Generar Remito TGN"</strong>
+                    </p>
+                    <button onClick={() => setTab('instrucciones')}
+                      className="text-blue-600 hover:text-blue-700 text-sm font-semibold underline">
+                      Ver cómo configurar el bookmarklet →
+                    </button>
+                  </div>
+                )}
+
+                {ordenCargada && (
+                  <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                    <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                      <CheckCircle2 className="w-5 h-5 text-green-600" />
+                      Orden Cargada desde Smartier
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3 text-sm mb-4">
+                      <div><p className="text-slate-500 text-xs uppercase font-semibold">Orden</p><p className="font-mono font-bold">#{ordenCargada.numero}</p></div>
+                      <div><p className="text-slate-500 text-xs uppercase font-semibold">Cliente</p><p>{ordenCargada.cliente}</p></div>
+                      <div><p className="text-slate-500 text-xs uppercase font-semibold">Producto</p><p>{ordenCargada.producto}</p></div>
+                      <div><p className="text-slate-500 text-xs uppercase font-semibold">Estado</p><p>{ordenCargada.estado}</p></div>
+                      <div className="col-span-2"><p className="text-slate-500 text-xs uppercase font-semibold">Entrega</p><p>{ordenCargada.fechaEntrega}</p></div>
+                      {ordenCargada.direccion && <div className="col-span-2"><p className="text-slate-500 text-xs uppercase font-semibold">Dirección</p><p>{ordenCargada.direccion}</p></div>}
+                    </div>
+                    <button onClick={handleGenerarRemito}
+                      className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition">
+                      ✓ Generar Remito #{numeroRemito}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h3 className="text-lg font-bold text-slate-900 mb-4">Estadísticas</h3>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-slate-500 text-xs uppercase font-semibold">Remitos Generados</p>
+                    <p className="text-4xl font-bold text-blue-600">{remitos.length}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 text-xs uppercase font-semibold">Próximo Remito</p>
+                    <p className="text-2xl font-bold text-slate-900">#{numeroRemito}</p>
+                  </div>
+                  <div className="pt-3 border-t border-slate-200">
+                    <p className="text-slate-500 text-xs uppercase font-semibold mb-2">Últimos</p>
+                    <div className="space-y-2">
+                      {remitos.slice(0, 5).map((r) => (
+                        <div key={r.id} className="bg-slate-50 p-2 rounded flex justify-between items-center">
+                          <span className="font-mono text-blue-600 font-bold text-sm">#{r.id}</span>
+                          <span className="text-slate-600 text-xs truncate ml-2">{r.cliente}</span>
+                        </div>
+                      ))}
+                      {remitos.length === 0 && <p className="text-slate-400 italic text-xs">Sin remitos aún</p>}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {remitos.length > 0 && (
           <div className="mt-6 bg-white rounded-xl shadow-lg overflow-hidden">
@@ -295,8 +338,8 @@ export default function RemitosApp() {
                       <td className="px-5 py-4 text-sm text-slate-600">{r.fecha}</td>
                       <td className="px-5 py-4">
                         <button onClick={() => handleImprimir(r)}
-                          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1 px-3 rounded text-sm transition">
-                          Imprimir
+                          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1 px-3 rounded text-sm transition flex items-center gap-1">
+                          <Printer className="w-3 h-3" />Imprimir
                         </button>
                       </td>
                     </tr>
@@ -306,6 +349,7 @@ export default function RemitosApp() {
             </div>
           </div>
         )}
+
       </div>
     </div>
   );
