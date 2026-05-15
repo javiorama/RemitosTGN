@@ -51,9 +51,9 @@ const scrapearOrdenReal = async (numeroOrden) => {
   let html = '';
   try {
     html = ventana.document.body.innerHTML;
-  } catch {
+  } catch (e) {
     ventana.close();
-    throw new Error('No se pudo acceder. Asegurate de estar logueado en Smartier en este navegador.');
+    throw new Error('El navegador bloqueó el acceso entre ventanas (CORS). Necesitamos otra solución.');
   }
   ventana.close();
   if (!html || html.length < 500) throw new Error('La página no cargó. Verificá que estés logueado en Smartier.');
