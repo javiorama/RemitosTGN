@@ -47,7 +47,7 @@ const scrapearOrdenReal = async (numeroOrden) => {
   const url = `${SMARTIER_BASE}/#/CRM/Ordenes/${numeroOrden}`;
   const ventana = window.open(url, '_smartier_scraper', 'width=1,height=1,left=-9999');
   if (!ventana) throw new Error('El navegador bloqueó el popup. Habilitá los popups para este sitio.');
-  await new Promise((r) => setTimeout(r, 4000));
+  await new Promise((r) => setTimeout(r, 7000));
   let html = '';
   try {
     html = ventana.document.body.innerHTML;
