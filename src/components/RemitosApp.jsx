@@ -240,7 +240,6 @@ const RemitosApp = () => {
       </head>
       <body>
         <div class="container">
-          <!-- HEADER -->
           <div class="header">
             <div class="empresa-info">
               <h1>${empresa.razonSocial}</h1>
@@ -254,7 +253,6 @@ const RemitosApp = () => {
             </div>
           </div>
 
-          <!-- FECHAS Y REFERENCIAS -->
           <div class="two-columns">
             <div>
               <div class="campo">
@@ -278,7 +276,6 @@ const RemitosApp = () => {
             </div>
           </div>
 
-          <!-- PRODUCTOS -->
           <div class="section">
             <div class="section-title">Productos/Servicios</div>
             <div class="productos">
@@ -295,7 +292,6 @@ const RemitosApp = () => {
             </div>
           </div>
 
-          <!-- FIRMA Y PIE -->
           <div class="footer">
             <p style="margin-bottom: 30px; font-style: italic; color: #666;">
               Remito generado automáticamente por sistema TG Norte - ${new Date().toLocaleDateString()}
@@ -338,7 +334,6 @@ const RemitosApp = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
       <div className="max-w-7xl mx-auto">
-        <!-- HEADER APP -->
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <FileText className="w-8 h-8 text-blue-400" />
@@ -348,7 +343,6 @@ const RemitosApp = () => {
         </div>
 
         <div className="grid grid-cols-3 gap-6">
-          <!-- PANEL IZQUIERDO: SCRAPER -->
           <div className="col-span-2">
             <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
               <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
@@ -389,7 +383,6 @@ const RemitosApp = () => {
                 </button>
               </div>
 
-              <!-- Mensajes -->
               {error && (
                 <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-4 flex gap-3">
                   <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
@@ -397,7 +390,6 @@ const RemitosApp = () => {
                 </div>
               )}
 
-              <!-- Datos Scrapeados -->
               {remito && (
                 <div className="mt-6 bg-slate-50 rounded-lg p-4 border border-slate-200">
                   <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
@@ -438,7 +430,6 @@ const RemitosApp = () => {
             </div>
           </div>
 
-          <!-- PANEL DERECHO: STATS -->
           <div className="col-span-1">
             <div className="bg-white rounded-lg shadow-lg p-6 sticky top-6">
               <h3 className="text-lg font-bold text-slate-900 mb-4">Estadísticas</h3>
@@ -470,7 +461,6 @@ const RemitosApp = () => {
           </div>
         </div>
 
-        <!-- LISTADO DE REMITOS -->
         {remitos.length > 0 && (
           <div className="mt-6 bg-white rounded-lg shadow-lg overflow-hidden">
             <div className="p-6 border-b border-slate-200">
