@@ -87,7 +87,7 @@ export default function RemitosApp() {
   // Leer datos que vienen por URL (desde el bookmarklet)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('orden')) {
+    if (params.get('producto') || params.get('cliente')) {
       const datos = {
         numero:        params.get('orden') || '',
         cliente:       params.get('cliente') || '',
