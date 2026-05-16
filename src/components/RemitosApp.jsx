@@ -429,16 +429,43 @@ ${CSS}
 
         {tab === 'instrucciones' && (
           <div className="bg-white rounded-xl shadow-lg p-6">
-            <h2 className="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2">
+            <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
               <BookmarkIcon className="w-5 h-5 text-blue-600" />Configurar Bookmarklet
             </h2>
-            <p className="text-slate-600 text-sm mb-4">Click derecho en la barra de favoritos → "Añadir página" → Nombre: <strong>Generar Remito TGN</strong> → pegá esto como URL:</p>
-            <textarea readOnly
-              value={`javascript:(function(){var t=function(s){var e=document.querySelector(s);return e?e.textContent.trim():""};var numero=window.location.hash.match(/Ordenes\/(\d+)/)?.[1]||"";var cliente=t("a.nombre-cliente.ng-binding");var rep=t("a.nombre-representante.ng-binding");var prod=t(".nombre-producto.ng-binding");var ref=t(".referencia.ng-binding");var producto=ref?prod+" - "+ref:prod;var desc="";var descEl=document.querySelector(".st-card-content.ng-binding");if(descEl)desc=(descEl.innerText||descEl.textContent).trim().slice(0,400);var fechaEls=document.querySelectorAll(".fecha-value.ng-binding");var fc=fechaEls[0]?fechaEls[0].textContent.trim():"";var fe=fechaEls[1]?fechaEls[1].textContent.trim():"";var dir=t(".comentarios .ng-binding");var estado=t(".st-chip.estado-1");window.location.href="https://remitos-tgn.vercel.app?orden="+encodeURIComponent(numero)+"&cliente="+encodeURIComponent(cliente)+"&representante="+encodeURIComponent(rep)+"&producto="+encodeURIComponent(producto)+"&descripcion="+encodeURIComponent(desc)+"&fechaCreacion="+encodeURIComponent(fc)+"&fechaEntrega="+encodeURIComponent(fe)+"&direccion="+encodeURIComponent(dir)+"&estado="+encodeURIComponent(estado);})();`}
-              className="w-full text-xs font-mono bg-slate-900 text-green-400 p-3 rounded border border-slate-700 h-24 resize-none"
-              onClick={(e) => e.target.select()}
-            />
-            <p className="text-xs text-slate-400 mt-2">Click en el texto → Ctrl+C para copiar</p>
+            <p className="text-slate-600 text-sm mb-6">
+              El bookmarklet es un botón que guardás en tu barra de favoritos. Cuando estés en una orden de Smartier, lo clickeás y automáticamente abre esta app con los datos cargados.
+            </p>
+            <div className="space-y-6 mb-6">
+              <div className="flex gap-4 items-start">
+                <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold flex-shrink-0 text-sm">1</div>
+                <div>
+                  <p className="font-semibold text-slate-900 mb-1">Mostrá la barra de favoritos</p>
+                  <p className="text-slate-500 text-sm">En Chrome: Ctrl+Shift+B (o Cmd+Shift+B en Mac)</p>
+                </div>
+              </div>
+              <div className="flex gap-4 items-start">
+                <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold flex-shrink-0 text-sm">2</div>
+                <div>
+                  <p className="font-semibold text-slate-900 mb-3">Arrastrá este botón a tu barra de favoritos</p>
+                  <a
+                    href="javascript:(function(){var t=function(s){var e=document.querySelector(s);return e?e.textContent.trim():''};var numero=window.location.hash.match(/Ordenes\/(\d+)/)?.[1]||'';var cliente=t('a.nombre-cliente.ng-binding');var rep=t('a.nombre-representante.ng-binding');var prod=t('.nombre-producto.ng-binding');var ref=t('.referencia.ng-binding');var producto=ref?prod+' - '+ref:prod;var desc='';var descEl=document.querySelector('.st-card-content.ng-binding');if(descEl)desc=(descEl.innerText||descEl.textContent).trim().slice(0,400);var fechaEls=document.querySelectorAll('.fecha-value.ng-binding');var fc=fechaEls[0]?fechaEls[0].textContent.trim():'';var fe=fechaEls[1]?fechaEls[1].textContent.trim():'';var dir=t('.comentarios .ng-binding');var estado=t('.st-chip.estado-1');window.location.href='https://remitos-tgn.vercel.app?orden='+encodeURIComponent(numero)+'&cliente='+encodeURIComponent(cliente)+'&representante='+encodeURIComponent(rep)+'&producto='+encodeURIComponent(producto)+'&descripcion='+encodeURIComponent(desc)+'&fechaCreacion='+encodeURIComponent(fc)+'&fechaEntrega='+encodeURIComponent(fe)+'&direccion='+encodeURIComponent(dir)+'&estado='+encodeURIComponent(estado);})();"
+                    className="inline-block bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-bold px-5 py-3 rounded-lg cursor-move select-none shadow text-sm"
+                    onClick={(e) => e.preventDefault()}
+                    draggable="true"
+                  >
+                    📋 Generar Remito TGN
+                  </a>
+                  <p className="text-slate-400 text-xs mt-2">Arrastralo a tu barra de favoritos. No lo clickees acá.</p>
+                </div>
+              </div>
+              <div className="flex gap-4 items-start">
+                <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold flex-shrink-0 text-sm">3</div>
+                <div>
+                  <p className="font-semibold text-slate-900 mb-1">Usarlo</p>
+                  <p className="text-slate-500 text-sm">Abrí cualquier orden en Smartier → clickeá el bookmark → esta app se abre con los datos listos.</p>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
