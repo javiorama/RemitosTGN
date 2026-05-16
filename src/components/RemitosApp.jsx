@@ -448,10 +448,15 @@ ${CSS}
                 <div>
                   <p className="font-semibold text-slate-900 mb-3">Arrastrá este botón a tu barra de favoritos</p>
                   <a
-                    href="javascript:(function(){var t=function(s){var e=document.querySelector(s);return e?e.textContent.trim():''};var numero=window.location.hash.match(/Ordenes\/(\d+)/)?.[1]||'';var cliente=t('a.nombre-cliente.ng-binding');var rep=t('a.nombre-representante.ng-binding');var prod=t('.nombre-producto.ng-binding');var ref=t('.referencia.ng-binding');var producto=ref?prod+' - '+ref:prod;var desc='';var descEl=document.querySelector('.st-card-content.ng-binding');if(descEl)desc=(descEl.innerText||descEl.textContent).trim().slice(0,400);var fechaEls=document.querySelectorAll('.fecha-value.ng-binding');var fc=fechaEls[0]?fechaEls[0].textContent.trim():'';var fe=fechaEls[1]?fechaEls[1].textContent.trim():'';var dir=t('.comentarios .ng-binding');var estado=t('.st-chip.estado-1');window.location.href='https://remitos-tgn.vercel.app?orden='+encodeURIComponent(numero)+'&cliente='+encodeURIComponent(cliente)+'&representante='+encodeURIComponent(rep)+'&producto='+encodeURIComponent(producto)+'&descripcion='+encodeURIComponent(desc)+'&fechaCreacion='+encodeURIComponent(fc)+'&fechaEntrega='+encodeURIComponent(fe)+'&direccion='+encodeURIComponent(dir)+'&estado='+encodeURIComponent(estado);})();"
+                    href="#"
                     className="inline-block bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-bold px-5 py-3 rounded-lg cursor-move select-none shadow text-sm"
                     onClick={(e) => e.preventDefault()}
                     draggable="true"
+                    onDragStart={(e) => {
+                      const code = "javascript:(function(){var t=function(s){var e=document.querySelector(s);return e?e.textContent.trim():''};var numero=window.location.hash.match(/Ordenes\/(\d+)/)?.[1]||'';var cliente=t('a.nombre-cliente.ng-binding');var rep=t('a.nombre-representante.ng-binding');var prod=t('.nombre-producto.ng-binding');var ref=t('.referencia.ng-binding');var producto=ref?prod+' - '+ref:prod;var desc='';var descEl=document.querySelector('.st-card-content.ng-binding');if(descEl)desc=(descEl.innerText||descEl.textContent).trim().slice(0,400);var fechaEls=document.querySelectorAll('.fecha-value.ng-binding');var fc=fechaEls[0]?fechaEls[0].textContent.trim():'';var fe=fechaEls[1]?fechaEls[1].textContent.trim():'';var dir=t('.comentarios .ng-binding');var estado=t('.st-chip.estado-1');window.location.href='https://remitos-tgn.vercel.app?orden='+encodeURIComponent(numero)+'&cliente='+encodeURIComponent(cliente)+'&representante='+encodeURIComponent(rep)+'&producto='+encodeURIComponent(producto)+'&descripcion='+encodeURIComponent(desc)+'&fechaCreacion='+encodeURIComponent(fc)+'&fechaEntrega='+encodeURIComponent(fe)+'&direccion='+encodeURIComponent(dir)+'&estado='+encodeURIComponent(estado);})();";
+                      e.dataTransfer.setData('text/uri-list', code);
+                      e.dataTransfer.setData('text/plain', code);
+                    }}
                   >
                     📋 Generar Remito TGN
                   </a>
